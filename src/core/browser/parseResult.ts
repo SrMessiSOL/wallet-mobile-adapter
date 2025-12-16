@@ -22,13 +22,14 @@ export const handleBrowserResult = (url: string): BrowserResult => {
     const signature = parsed.searchParams.get('signature');
     const clientDataJsonBase64 = parsed.searchParams.get('clientDataJSONReturn');
     const authenticatorDataBase64 = parsed.searchParams.get('authenticatorDataReturn');
-
-    if (!signature || !clientDataJsonBase64 || !authenticatorDataBase64) {
+    const message = parsed.searchParams.get('msg');
+    if (!signature || !clientDataJsonBase64 || !authenticatorDataBase64 || !message) {
       logger.error('Browser result failed: missing signature data', {
         url,
         hasSignature: !!signature,
         hasClientData: !!clientDataJsonBase64,
         hasAuthData: !!authenticatorDataBase64,
+        hasMessage: !!message,
       });
       throw new Error('Missing signature or message from redirect');
     }
@@ -37,6 +38,7 @@ export const handleBrowserResult = (url: string): BrowserResult => {
       signature,
       clientDataJsonBase64,
       authenticatorDataBase64,
+      message,
     };
   } catch (error) {
     logger.error('Failed to handle browser result:', error, { url });

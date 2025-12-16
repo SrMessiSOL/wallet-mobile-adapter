@@ -11,9 +11,8 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { WalletStateClient, WalletInfo, WalletConfig, ConnectOptions, SignOptions } from '../types';
 import { DEFAULT_COMMITMENT, DEFAULTS, STORAGE_KEYS } from '../config';
 import { logger } from '../core/logger';
-import { connectAction, disconnectAction, signAndExecuteTransaction } from '../actions';
-import { SmartWalletActionArgs } from '../contract';
-
+import { connectAction, disconnectAction, signAndExecuteTransaction, signMessageAction } from '../actions';
+import { SignAndSendTransactionPayload } from '../types';
 // AsyncStorage dynamic import remains unchanged
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let AsyncStorage: any = null;
@@ -73,7 +72,7 @@ export const useWalletStore = create<WalletStateClient>()(
     (set, get) => ({
       wallet: null,
       config: {
-        ipfsUrl: DEFAULTS.IPFS_URL,
+        portalUrl: DEFAULTS.PORTAL_URL,
         configPaymaster: {
           paymasterUrl: DEFAULTS.PAYMASTER_URL,
         },
@@ -137,8 +136,9 @@ export const useWalletStore = create<WalletStateClient>()(
 
       connect: (options: ConnectOptions) => connectAction(get, set, options),
       disconnect: () => disconnectAction(set),
-      signAndExecuteTransaction: (instructions: anchor.web3.TransactionInstruction[], options: SignOptions) =>
-        signAndExecuteTransaction(get, set, instructions, options),
+      signAndExecuteTransaction: (payload: SignAndSendTransactionPayload, options: SignOptions) =>
+        signAndExecuteTransaction(get, set, payload, options),
+      signMessage: (message: string, options: SignOptions) => signMessageAction(get, set, message, options),
     }),
     {
       name: STORAGE_KEYS.WALLET,

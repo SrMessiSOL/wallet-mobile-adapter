@@ -97,17 +97,20 @@ export const getFeePayer = async (paymasterUrl: string, apiKey?: string) => {
 /**
  * Signs and immediately broadcasts a transaction via the paymaster.
  * 
+ *
  * @param base64EncodedTransaction - The transaction to sign and send, encoded as base64
  * @param paymasterUrl - URL of the paymaster service
  * @param signerKey - The public key of the user signing the transaction
  * @param apiKey - Optional API key for authentication
+ * @param feeToken - Optional token mint address to pay fees with.
  * @returns Transaction signature (txid)
  */
 export const signAndExecuteTransaction = async (
   base64EncodedTransaction: string,
   paymasterUrl: string,
   signerKey: string,
-  apiKey?: string
+  apiKey?: string,
+  feeToken?: string
 ) => {
   interface SignAndSendResult {
     signature: string;
@@ -119,6 +122,7 @@ export const signAndExecuteTransaction = async (
     {
       transaction: base64EncodedTransaction,
       signer_key: signerKey,
+      ...(feeToken && { fee_token: feeToken }),
     },
     paymasterUrl,
     apiKey
@@ -134,18 +138,20 @@ export const signAndExecuteTransaction = async (
 /**
  * Signs a transaction with the paymaster's key but does NOT broadcast it.
  * Useful for inspecting the signed transaction before sending or for multi-sig flows.
- * 
+ *
  * @param base64EncodedTransaction - The transaction to sign, encoded as base64
  * @param paymasterUrl - URL of the paymaster service
  * @param signerKey - The public key of the user signing the transaction
  * @param apiKey - Optional API key for authentication
+ * @param feeToken - Optional token mint address to pay fees with.
  * @returns Object containing the signature and the fully signed transaction (base64)
  */
 export const signTransaction = async (
   base64EncodedTransaction: string,
   paymasterUrl: string,
   signerKey: string,
-  apiKey?: string
+  apiKey?: string,
+  feeToken?: string
 ) => {
   interface SignTransactionResult {
     signature: string;
