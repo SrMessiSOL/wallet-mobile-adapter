@@ -26,7 +26,7 @@ Buffer.prototype.subarray = function subarray(begin: number | undefined, end: nu
 
 export const LazorKitProvider = ({
   rpcUrl = DEFAULTS.RPC_ENDPOINT,
-  ipfsUrl = DEFAULTS.IPFS_URL,
+  portalUrl = DEFAULTS.PORTAL_URL,
   configPaymaster = {
     paymasterUrl: DEFAULTS.PAYMASTER_URL,
   },
@@ -57,7 +57,7 @@ export const LazorKitProvider = ({
 
       setConnection(connection);
       setConfig({
-        ipfsUrl,
+        portalUrl,
         configPaymaster: {
           paymasterUrl: configPaymaster.paymasterUrl,
           apiKey: configPaymaster.apiKey,
@@ -69,12 +69,12 @@ export const LazorKitProvider = ({
     } catch (error) {
       logger.error('Failed to initialize wallet store:', error, {
         rpcUrl,
-        ipfsUrl,
+        portalUrl,
         configPaymaster,
         isDebug,
       });
     }
-  }, [connection, ipfsUrl, configPaymaster, rpcUrl, isDebug, setConnection, setConfig]);
+  }, [connection, portalUrl, configPaymaster, rpcUrl, isDebug, setConnection, setConfig]);
 
   try {
     return <>{typeof children === 'string' ? <span>{children}</span> : children}</>;

@@ -7,7 +7,7 @@ import { SmartWalletActionArgs } from './contract';
  */
 export interface WalletInfo {
   readonly credentialId: string;
-  readonly passkeyPubkey: number[];
+  passkeyPubkey: number[];
   readonly expo: string;
   readonly platform: string;
   readonly smartWallet: string;
@@ -15,7 +15,7 @@ export interface WalletInfo {
 }
 
 export interface WalletConfig {
-  readonly ipfsUrl: string;
+  readonly portalUrl: string;
   readonly configPaymaster: {
     readonly paymasterUrl: string;
     readonly apiKey?: string;
@@ -28,7 +28,7 @@ export interface WalletConfig {
  */
 export interface LazorKitProviderProps {
   readonly rpcUrl?: string;
-  readonly ipfsUrl?: string;
+  readonly portalUrl?: string;
   readonly configPaymaster?: {
     readonly paymasterUrl: string;
     readonly apiKey?: string;
@@ -51,6 +51,7 @@ export interface BrowserResult {
   readonly signature: string;
   readonly clientDataJsonBase64: string;
   readonly authenticatorDataBase64: string;
+  readonly message: string;
 }
 
 /**
@@ -71,6 +72,19 @@ export interface SignOptions {
   readonly redirectUrl: string;
   readonly onSuccess?: (signature: any) => void;
   readonly onFail?: (error: Error) => void;
+}
+
+/**
+ * Store state
+ */
+export interface SignAndSendTransactionPayload {
+  readonly instructions: anchor.web3.TransactionInstruction[];
+  readonly transactionOptions: {
+    readonly feeToken?: string;
+    readonly addressLookupTableAccounts?: anchor.web3.AddressLookupTableAccount[];
+    readonly computeUnitLimit?: number;
+    readonly clusterSimulation: 'devnet' | 'mainnet';
+  };
 }
 
 /**
@@ -101,7 +115,8 @@ export interface WalletStateClient {
   // Actions
   connect: (options: ConnectOptions) => Promise<WalletInfo>;
   disconnect: () => Promise<void>;
-  signAndExecuteTransaction: (instructions: anchor.web3.TransactionInstruction[], options: SignOptions) => Promise<void>;
+  signAndExecuteTransaction: (payload: SignAndSendTransactionPayload, options: SignOptions) => Promise<void>;
+  signMessage: (message: string, options: SignOptions) => Promise<void>;
 }
 
 /**
@@ -118,7 +133,8 @@ export interface LazorWalletHook {
   connection: anchor.web3.Connection;
   connect: (options: ConnectOptions) => Promise<WalletInfo>;
   disconnect: (options?: DisconnectOptions) => Promise<void>;
-  signAndSendTransaction: (instructions: anchor.web3.TransactionInstruction[], options: SignOptions) => Promise<string>;
+  signAndSendTransaction: (payload: SignAndSendTransactionPayload, options: SignOptions) => Promise<string>;
+  signMessage: (message: string, options: SignOptions) => Promise<{ signature: string; signedPayload: string }>;
 }
 
 /**
@@ -132,7 +148,8 @@ export interface WalletActions {
     timestamp: anchor.BN,
     action: SmartWalletActionArgs,
     browserResult: BrowserResult,
-    signOptions: SignOptions
+    signOptions: SignOptions,
+    transactionOptions: { feeToken?: string; addressLookupTableAccounts?: anchor.web3.AddressLookupTableAccount[]; computeUnitLimit?: number; clusterSimulation: 'devnet' | 'mainnet'; }
   ) => Promise<string>;
 }
 

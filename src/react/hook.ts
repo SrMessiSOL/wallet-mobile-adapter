@@ -6,9 +6,8 @@ import * as anchor from '@coral-xyz/anchor';
 import { useWalletStore } from './store';
 import { ConnectOptions, DisconnectOptions, LazorWalletHook, SignOptions } from '../types';
 import { logger } from '../core/logger';
-import { SmartWalletActionArgs } from '../contract';
 
-export function useLazorWallet(): LazorWalletHook {
+export function useWallet(): LazorWalletHook {
   const {
     wallet,
     isLoading,
@@ -19,6 +18,7 @@ export function useLazorWallet(): LazorWalletHook {
     disconnect,
     connection,
     signAndExecuteTransaction,
+    signMessage,
   } = useWalletStore();
 
   const handleConnect = async (connectOptions: ConnectOptions) => {
@@ -47,12 +47,12 @@ export function useLazorWallet(): LazorWalletHook {
   };
 
   const handleSignAndExecuteTransaction = (
-    instructions: anchor.web3.TransactionInstruction[],
+    payload: import('../types').SignAndSendTransactionPayload,
     signOptions: SignOptions
   ): Promise<string> => {
     return new Promise<string>((resolve, reject) => {
       try {
-        signAndExecuteTransaction(instructions, {
+        signAndExecuteTransaction(payload, {
           redirectUrl: signOptions.redirectUrl,
           onSuccess: (signature) => {
             signOptions?.onSuccess?.(signature);
@@ -77,6 +77,33 @@ export function useLazorWallet(): LazorWalletHook {
     });
   };
 
+  const handleSignMessage = (
+    message: string,
+    signOptions: SignOptions
+  ): Promise<{ signature: string; signedPayload: string }> => {
+    return new Promise((resolve, reject) => {
+      try {
+        signMessage(message, {
+          redirectUrl: signOptions.redirectUrl,
+          onSuccess: (result) => {
+            signOptions?.onSuccess?.(result);
+            resolve(result);
+          },
+          onFail: (error) => {
+            logger.error('Hook signMessage failed:', error, {
+              redirectUrl: signOptions.redirectUrl,
+            });
+            signOptions?.onFail?.(error);
+            reject(error);
+          },
+        });
+      } catch (e) {
+        const err = e instanceof Error ? e : new Error(String(e));
+        reject(err);
+      }
+    });
+  };
+
   return {
     smartWalletPubkey: wallet?.smartWallet ? new anchor.web3.PublicKey(wallet.smartWallet) : null,
     passkeyPubkey: wallet?.passkeyPubkey || null,
@@ -89,5 +116,6 @@ export function useLazorWallet(): LazorWalletHook {
     connect: handleConnect,
     disconnect: handleDisconnect,
     signAndSendTransaction: handleSignAndExecuteTransaction,
+    signMessage: handleSignMessage,
   };
 }

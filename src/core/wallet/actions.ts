@@ -7,6 +7,7 @@
  */
 
 import * as anchor from '@coral-xyz/anchor';
+import { Buffer } from 'buffer';
 import { WalletInfo, BrowserResult, WalletActions, SignOptions } from '../../types';
 import {
   ArgsByAction,
@@ -106,8 +107,15 @@ export const createWalletActions = (
         throw new Error('Smart wallet or wallet device is undefined after processing.');
       }
 
+      // If passkeyPubkey was missing (e.g. from redirect), update it from on-chain state
+      const initialPasskeyPubkey = data.passkeyPubkey;
+      const finalPasskeyPubkey = initialPasskeyPubkey.length === 0 && walletState.passkeyPubkey
+        ? Array.from(walletState.passkeyPubkey)
+        : initialPasskeyPubkey;
+
       return {
         ...data,
+        passkeyPubkey: finalPasskeyPubkey,
         smartWallet: smartWallet.toString(),
         walletDevice: walletDevice.toString(),
       };
@@ -129,7 +137,8 @@ export const createWalletActions = (
     timestamp: anchor.BN,
     action: SmartWalletActionArgs,
     browserResult: BrowserResult,
-    _options: SignOptions
+    signOptions: SignOptions,
+    transactionOptions: { feeToken?: string; addressLookupTableAccounts?: anchor.web3.AddressLookupTableAccount[]; computeUnitLimit?: number; }
   ): Promise<string> => {
     setLoading(true);
     const credentialHash = asCredentialHash(
@@ -143,42 +152,53 @@ export const createWalletActions = (
       const { policyInstruction, cpiInstructions } =
         action.args as ArgsByAction[SmartWalletAction.CreateChunk];
 
-      const createChunkTransaction = await lazorProgram.createChunkTxn({
-        payer: feePayer,
-        smartWallet: new anchor.web3.PublicKey(data.smartWallet),
-        passkeySignature: {
-          passkeyPublicKey: asPasskeyPublicKey(data.passkeyPubkey),
-          signature64: browserResult.signature,
-          clientDataJsonRaw64: browserResult.clientDataJsonBase64,
-          authenticatorDataRaw64: browserResult.authenticatorDataBase64,
+      // Use provided ALTs directly
+
+      const createChunkTransaction = await lazorProgram.createChunkTxn(
+        {
+          payer: feePayer,
+          smartWallet: new anchor.web3.PublicKey(data.smartWallet),
+          passkeySignature: {
+            passkeyPublicKey: asPasskeyPublicKey(data.passkeyPubkey),
+            signature64: browserResult.signature,
+            clientDataJsonRaw64: browserResult.clientDataJsonBase64,
+            authenticatorDataRaw64: browserResult.authenticatorDataBase64,
+          },
+          policyInstruction,
+          cpiInstructions,
+          timestamp,
+          credentialHash,
         },
-        policyInstruction,
-        cpiInstructions,
-        timestamp,
-        credentialHash,
-      });
+      ) as anchor.web3.Transaction;
 
       const signature = await signAndExecuteTransaction(
-        createChunkTransaction.serialize({ verifySignatures: false, requireAllSignatures: false }).toString('base64'),
+        Buffer.from(createChunkTransaction.serialize({ verifySignatures: false, requireAllSignatures: false })).toString('base64'),
         config.configPaymaster.paymasterUrl,
         feePayer.toBase58(),
-        config.configPaymaster.apiKey
+        config.configPaymaster.apiKey,
+        transactionOptions?.feeToken
       );
       await lazorProgram.connection.confirmTransaction(
         String(signature),
         'confirmed'
       );
+      const addressLookupTables = transactionOptions?.addressLookupTableAccounts || [];
       const executeChunkTransaction = await lazorProgram.executeChunkTxn({
         payer: feePayer,
         smartWallet: new anchor.web3.PublicKey(data.smartWallet),
         cpiInstructions,
+      }, {
+        computeUnitLimit: transactionOptions?.computeUnitLimit,
+        addressLookupTables: addressLookupTables,
       });
       const signatureExecuteChunk = await signAndExecuteTransaction(
-        executeChunkTransaction.serialize({ verifySignatures: false, requireAllSignatures: false }).toString('base64'),
+        addressLookupTables.length > 0 ? Buffer.from(executeChunkTransaction.serialize()).toString('base64') : Buffer.from(executeChunkTransaction.serialize({ verifySignatures: false, requireAllSignatures: false })).toString('base64'),
         config.configPaymaster.paymasterUrl,
         feePayer.toBase58(),
-        config.configPaymaster.apiKey
+        config.configPaymaster.apiKey,
+        transactionOptions?.feeToken
       );
+
       await lazorProgram.connection.confirmTransaction(
         String(signatureExecuteChunk),
         'confirmed'

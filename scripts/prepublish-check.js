@@ -66,22 +66,22 @@ function checkFileSize(filePath, maxSizeKB, description) {
 function checkPackageJson() {
   return check('Package.json validation', () => {
     const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-    
+
     const requiredFields = [
       'name', 'version', 'main', 'module', 'types', 'files',
       'author', 'license', 'description', 'repository'
     ];
-    
+
     for (const field of requiredFields) {
       if (!pkg[field]) {
         throw new Error(`Missing required field: ${field}`);
       }
     }
-    
+
     if (!pkg.name.startsWith('@lazorkit/')) {
       throw new Error('Package name must start with @lazorkit/');
     }
-    
+
     if (pkg.license !== 'MIT') {
       throw new Error('License must be MIT');
     }
@@ -103,20 +103,20 @@ function checkTypes() {
 function checkDistFiles() {
   const distFiles = [
     'dist/index.js',
-    'dist/index.esm.js', 
+    'dist/index.esm.js',
     'dist/index.d.ts'
   ];
-  
+
   const results = [];
   for (const file of distFiles) {
     results.push(checkFileExists(file, `Dist file exists: ${file}`));
   }
-  
+
   // Check file sizes
   results.push(checkFileSize('dist/index.js', 500, 'Main bundle size check'));
   results.push(checkFileSize('dist/index.esm.js', 500, 'ESM bundle size check'));
   results.push(checkFileSize('dist/index.d.ts', 200, 'Types file size check'));
-  
+
   return results;
 }
 
@@ -125,29 +125,29 @@ function checkDocumentation() {
     'README.md',
     'SECURITY.md'
   ];
-  
+
   const results = [];
   for (const doc of docs) {
     results.push(checkFileExists(doc, `Documentation exists: ${doc}`));
   }
-  
+
   return results;
 }
 
 function checkExports() {
   return check('Export verification', () => {
     const distIndex = fs.readFileSync('dist/index.d.ts', 'utf8');
-    
+
     const requiredExports = [
       'LazorKitProvider',
-      'useLazorWallet',
+      'useWallet',
       'useWalletStore',
       'WalletInfo',
       'ConnectOptions',
       'SignOptions',
       'LazorKitError'
     ];
-    
+
     for (const exportName of requiredExports) {
       if (!distIndex.includes(exportName)) {
         throw new Error(`Missing export: ${exportName}`);
@@ -158,7 +158,7 @@ function checkExports() {
 
 function main() {
   log('🚀 Starting pre-publish checks...', colors.bold + colors.blue);
-  
+
   const checks = [
     checkPackageJson(),
     checkSecurity(),
@@ -168,9 +168,9 @@ function main() {
     ...checkDocumentation(),
     checkExports()
   ];
-  
+
   const failed = checks.filter(check => !check.success);
-  
+
   if (failed.length > 0) {
     log('\n❌ Pre-publish checks failed!', colors.bold + colors.red);
     log('Please fix the issues above before publishing.', colors.red);

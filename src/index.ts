@@ -14,7 +14,7 @@
  */
 
 export { LazorKitProvider } from './react/provider';
-export { useLazorWallet } from './react/hook';
+export { useWallet } from './react/hook';
 export { useWalletStore } from './react/store';
 export * from './types';
 export { logger } from './core/logger';
