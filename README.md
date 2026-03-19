@@ -126,3 +126,30 @@ export default ProfessionalSeedlessGaslessWallet;
 ```
 
 > Replace `prowallet://home` and `prowallet://callback` with your app deep links and set your own paymaster endpoint for mainnet deployments.
+
+
+### How to make it work (step-by-step)
+
+1. **Install dependencies in your React Native / Expo app**
+   ```bash
+   npm install @lazorkit/wallet-mobile-adapter @coral-xyz/anchor react-native-get-random-values
+   ```
+2. **Copy** `examples/ProfessionalSeedlessGaslessWallet.tsx` into your app codebase (for example `src/screens/WalletScreen.tsx`).
+3. **Use your own deep-link scheme** in the example constants:
+   - `REDIRECT_HOME`
+   - `REDIRECT_SIGN`
+4. **Register the same deep-link scheme in your app config** (Expo example):
+   ```json
+   {
+     "expo": {
+       "scheme": "prowallet"
+     }
+   }
+   ```
+5. **Set environment-specific endpoints** before production:
+   - `DEVNET_RPC_URL` → your preferred Solana RPC
+   - `PAYMASTER_URL` → your managed paymaster service
+   - `PORTAL_URL` → your Lazor portal/project endpoint
+6. **Run your app on a real mobile device** (passkeys and deep links are device/browser-flow dependent).
+
+If connect/signing opens a browser but never returns, the deep-link scheme in your code and app configuration do not match exactly.
