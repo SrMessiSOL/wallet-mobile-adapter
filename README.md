@@ -106,3 +106,23 @@ Signs and sends transaction.
 
 **Returns**
 `Promise<string>` - Signature
+
+## Professional Mobile Wallet Starter
+
+If you want to ship a **production-style seedless + gasless mobile wallet**, use the complete starter screen in:
+
+- `examples/ProfessionalSeedlessGaslessWallet.tsx`
+
+It includes:
+- Passkey-based connect/disconnect flow
+- Live SOL balance refresh
+- Gasless transfer execution via Paymaster
+- Defensive UI states for loading/signing/errors
+
+```tsx
+import ProfessionalSeedlessGaslessWallet from './examples/ProfessionalSeedlessGaslessWallet';
+
+export default ProfessionalSeedlessGaslessWallet;
+```
+
+> Replace `prowallet://home` and `prowallet://callback` with your app deep links and set your own paymaster endpoint for mainnet deployments.
